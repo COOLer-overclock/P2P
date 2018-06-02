@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Console", "P2P\P2P.Console.csproj", "{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Core", "P2P.Core\P2P.Core.csproj", "{BFBA840B-900A-4AB6-B7A8-91175A44942C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Client", "P2P.Client\P2P.Client.csproj", "{CD7ECF69-7F07-44A2-8AED-45B764187DDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
