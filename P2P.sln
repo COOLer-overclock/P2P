@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Console", "P2P\P2P.Console.csproj", "{498170E7-1D4B-4DBC-BEE4-4AC298C46E45}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Core", "P2P.Core\P2P.Core.csproj", "{BFBA840B-900A-4AB6-B7A8-91175A44942C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Client", "P2P.Client\P2P.Client.csproj", "{CD7ECF69-7F07-44A2-8AED-45B764187DDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.PeerClient", "P2P.PeerClient\P2P.PeerClient.csproj", "{6778951C-A5F3-4C79-9A69-354AFA962311}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,12 +23,15 @@ Global
 		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFBA840B-900A-4AB6-B7A8-91175A44942C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CD7ECF69-7F07-44A2-8AED-45B764187DDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6778951C-A5F3-4C79-9A69-354AFA962311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6778951C-A5F3-4C79-9A69-354AFA962311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6778951C-A5F3-4C79-9A69-354AFA962311}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6778951C-A5F3-4C79-9A69-354AFA962311}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1DAF61ED-FFFC-4FC3-8CCB-C3E1276B1AE8}
 	EndGlobalSection
 EndGlobal

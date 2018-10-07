@@ -26,6 +26,7 @@ namespace P2P.Client
         {
             InitializeComponent();
         }
+        #region Init
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -88,6 +89,8 @@ namespace P2P.Client
             peerNameRegistration.Start();
         }
 
+        #endregion
+
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // Остановка регистрации
@@ -96,6 +99,8 @@ namespace P2P.Client
             // Остановка WCF-сервиса
             host.Close();
         }
+
+
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {

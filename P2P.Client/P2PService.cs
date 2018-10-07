@@ -3,17 +3,15 @@ using System.ServiceModel;
 
 namespace P2P.Client
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     class P2PService : IP2PService
     {
         private MainWindow _mainWindow;
         public string UserName { get; }
-        public Guid UserId { get; }
 
-        public P2PService(MainWindow mainWindow, string userName, Guid userId)
+        public P2PService(MainWindow mainWindow, string userNames)
         {
             _mainWindow = mainWindow;
-            UserName = userName;
-            UserId = userId;
         }
 
         public void SendMessage(string message, string from)
