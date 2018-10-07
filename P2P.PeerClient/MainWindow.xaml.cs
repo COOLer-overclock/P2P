@@ -1,4 +1,5 @@
-﻿using P2P.Core;
+﻿using NLog;
+using P2P.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,9 @@ namespace P2P.PeerClient
         private const string PEER_CLASSIFIER = "P2PNetwork";
         private const int PEERLIST_REFRESH_DELAY_MS = 0;
 
-        SynchronizationContext _syncContex;
+        private static ILogger _logger = NLog.LogManager.GetCurrentClassLogger();
+
+        SynchronizationContext _uiSyncContex;
 
         int _port;
         string _serviceUrl;
@@ -33,12 +36,13 @@ namespace P2P.PeerClient
         PeerNameRegistration _registration;
         PeerNameResolver _peerResolver;
 
-        object _findPeersSyncObj = new object();
-        object _peerFoundOrCompletedSyncObj = new object();
+        volatile object _findPeersSyncObj = new object();
+        volatile bool _canUpdatePeers = true;
 
         List<IPeerEntry> _availablePeers = new List<IPeerEntry>();
 
         #region Ctor
+
         public MainWindow()
         {
             InitializeComponent();
@@ -47,6 +51,7 @@ namespace P2P.PeerClient
         #endregion
 
         #region Handlers
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             #region Adress init
@@ -59,19 +64,24 @@ namespace P2P.PeerClient
                     _port = GetAvailablePort();
                     if (_port == default(int))
                     {
-                        MessageBox.Show(this, "Cannot find available port. Application will be shut down.", "Networking Error",
+                        var msg = "Cannot find available port. Application will be shut down.";
+                        _logger.Fatal(msg);
+                        MessageBox.Show(this, msg, "Networking Error",
                                 MessageBoxButton.OK, MessageBoxImage.Error);
                         Application.Current.Shutdown();
                     }
 
                     _serviceUrl = string.Format("net.tcp://{0}:{1}/P2PService", address, _port);
+                    _logger.Info($"Service URL: {_serviceUrl}");
                     break;
                 }
             }
             if (string.IsNullOrEmpty(_serviceUrl))
             {
-                MessageBox.Show(this, "Invalid service address. Application will be shut down.", "Networking Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = "Invalid service address. Application will be shut down.";
+                _logger.Fatal(msg);
+                MessageBox.Show(this, msg, "Networking Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
                 Application.Current.Shutdown();
             }
 
@@ -81,23 +91,27 @@ namespace P2P.PeerClient
             {
                 StartWcfService();
             }
-            catch (AddressAlreadyInUseException)
+            catch (AddressAlreadyInUseException ex)
             {
-                MessageBox.Show(this, "Host address is already in use. Application will be shut down.", "WCF Error",
-                   MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = "Host address is already in use. Application will be shut down.";
+                _logger.Fatal(ex, ex.Message);
+                MessageBox.Show(this, msg, "WCF Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
                 Application.Current.Shutdown();
             }
 
             CreatePeer();
             InitPeerResolver();
 
-            _syncContex = SynchronizationContext.Current.CreateCopy();
+            _uiSyncContex = SynchronizationContext.Current.CreateCopy();
             _refreshPeerTimer = new Timer(TimerCallBack, new object(),
                                   TimeSpan.FromMilliseconds(PEERLIST_REFRESH_DELAY_MS), TimeSpan.FromMilliseconds(AppSettings.PeerListRefreshMs));
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            _logger.Debug("Closing window...");
+
             _registration.Stop();
             _host.Close();
             _refreshPeerTimer = null;
@@ -118,11 +132,14 @@ namespace P2P.PeerClient
                     {
                         IP2PService remoteService = ChannelFactory<IP2PService>.CreateChannel(
                             binding, new EndpointAddress(remoteUrl));
-                        _availablePeers.Add(new PeerEntry(remoteService));
+                        var peerEntry = new PeerEntry(remoteService);
+                        _availablePeers.Add(peerEntry);
+
+                        _logger.Debug($"New peer found: {peerEntry}");
                     }
                     catch (Exception ex) when (ex is InvalidOperationException || ex is CommunicationException)
                     {
-                        // log
+                        _logger.Error(ex, "Cannot process new peer: {0}", ex.Message);
                     }
                 }
             }
@@ -132,19 +149,31 @@ namespace P2P.PeerClient
         {
             var peerPanel = this.PeerListPanel;
 
-            _syncContex.Send(state =>
+            _uiSyncContex.Send(state =>
             {
-                peerPanel.Children.Clear();
-                _availablePeers = _availablePeers.OrderBy(x => x.DisplayedName)
-                                                 .ToList();
-                foreach (var peer in _availablePeers)
+                try
                 {
-                    peerPanel.Children.Add(new Button()
+                    _logger.Debug("Updating peer list...");
+
+                    peerPanel.Children.Clear();
+                    _availablePeers = _availablePeers.OrderBy(x => x.DisplayedName)
+                                                     .ToList();
+                    foreach (var peer in _availablePeers)
                     {
-                        Width = peerPanel.Width,
-                        Height = 25,
-                        Content = peer.DisplayedName
-                    });
+                        peerPanel.Children.Add(new Button()
+                        {
+                            Width = peerPanel.Width,
+                            Height = 25,
+                            Content = peer.DisplayedName
+                        });
+                    }
+
+                    _canUpdatePeers = true;
+                    _logger.Debug($"Peer list update is completed. Number of peers: {_availablePeers.Count}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, $"Cannot update peer list: {ex.Message}");
                 }
             }, new object());
         }
@@ -185,16 +214,20 @@ namespace P2P.PeerClient
 
         private void FindPeers()
         {
-            if (Monitor.TryEnter(_findPeersSyncObj))
+            // obj unlocks in OnPeerResolveComplete
+            if (_canUpdatePeers)
             {
+                _canUpdatePeers = false;
                 try
                 {
+                    _logger.Debug("Searching peers...");
+
                     _availablePeers.Clear();
                     _peerResolver.ResolveAsync(_peerName, 1);
                 }
-                finally
+                catch (Exception ex)
                 {
-                    Monitor.Exit(_findPeersSyncObj);
+                    _logger.Error(ex, $"Find peers error: {ex.Message}");
                 }
             }
         }
@@ -209,6 +242,8 @@ namespace P2P.PeerClient
             _peerResolver = new PeerNameResolver();
             _peerResolver.ResolveProgressChanged += OnPeerResolverFound;
             _peerResolver.ResolveCompleted += OnPeerResolveComplete;
+
+            _logger.Debug("Peer resolver is inited");
         }
 
         /// <returns>the free port or 0 if it did not find a free port</returns>

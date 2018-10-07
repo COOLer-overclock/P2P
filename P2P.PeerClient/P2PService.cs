@@ -28,5 +28,10 @@ namespace P2P.PeerClient
         public void SendMessage(string message)
         {
         }
+
+        public override string ToString()
+        {
+            return $"userName = {GetUserName()}";
+        }
     }
 }

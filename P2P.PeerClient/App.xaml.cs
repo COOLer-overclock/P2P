@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace P2P.PeerClient
@@ -13,5 +8,16 @@ namespace P2P.PeerClient
     /// </summary>
     public partial class App : Application
     {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            AppDomain.CurrentDomain.UnhandledException += (sender, arg) => {
+                var logger = NLog.LogManager.GetCurrentClassLogger();
+
+                var ex = (Exception)arg.ExceptionObject;
+                logger.Fatal(ex, $"Unhandled exception: {ex.Message}");
+            };
+
+            base.OnStartup(e);
+        }
     }
 }

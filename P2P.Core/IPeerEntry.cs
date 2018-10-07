@@ -1,5 +1,4 @@
-﻿using System.Net.PeerToPeer;
-using System.ServiceModel;
+﻿using System.ServiceModel;
 
 namespace P2P.Core
 {
@@ -12,7 +11,6 @@ namespace P2P.Core
     public class PeerEntry : IPeerEntry
     {
         /// <summary>
-        /// 
         /// </summary>
         /// <exception cref="CommunicationException"></exception>
         /// <param name="serviceProxy"></param>
@@ -24,5 +22,10 @@ namespace P2P.Core
 
         public string DisplayedName { get; }
         public IP2PService ServiceProxy { get; }
+
+        public override string ToString()
+        {
+            return $"{nameof(DisplayedName)} = {DisplayedName}";
+        }
     }
 }
