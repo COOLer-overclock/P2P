@@ -8,7 +8,7 @@ namespace P2P.Core
         [OperationContract]
         string GetUserName();
 
-        [OperationContract]
+        [OperationContract(IsOneWay = true)]
         void SendMessage(string message);
     }
 }

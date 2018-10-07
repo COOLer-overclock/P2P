@@ -14,24 +14,6 @@ namespace P2P.PeerClient
 
         static AppSettings()
         {
-            #region Port
-
-            var portStr = ConfigurationManager.AppSettings.Get("Port");
-            if (!string.IsNullOrEmpty(portStr))
-            {
-                int port;
-                if (int.TryParse(portStr, out port))
-                {
-                    Port = port;
-                }
-                else
-                {
-                    throw new ConfigurationErrorsException("Cannot parse port value");
-                }
-            }
-
-            #endregion
-
             #region Peer List refresh
 
             var refreshPeriod = ConfigurationManager.AppSettings.Get("PeerListRefreshMs");

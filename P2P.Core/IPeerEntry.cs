@@ -4,6 +4,7 @@ namespace P2P.Core
 {
     public interface IPeerEntry
     {
+        string Address { get; }
         string DisplayedName { get; }
         IP2PService ServiceProxy { get; }
     }
@@ -14,12 +15,14 @@ namespace P2P.Core
         /// </summary>
         /// <exception cref="CommunicationException"></exception>
         /// <param name="serviceProxy"></param>
-        public PeerEntry(IP2PService serviceProxy)
+        public PeerEntry(IP2PService serviceProxy, string address)
         {
             ServiceProxy = serviceProxy;
             DisplayedName = serviceProxy.GetUserName();
+            Address = address;
         }
 
+        public string Address { get; }
         public string DisplayedName { get; }
         public IP2PService ServiceProxy { get; }
 

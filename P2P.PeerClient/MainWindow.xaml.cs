@@ -1,5 +1,7 @@
-﻿using NLog;
+﻿using Newtonsoft.Json;
+using NLog;
 using P2P.Core;
+using P2P.PeerClient.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +10,7 @@ using System.Net.NetworkInformation;
 using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.ServiceModel;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,16 +38,22 @@ namespace P2P.PeerClient
         PeerName _peerName;
         PeerNameRegistration _registration;
         PeerNameResolver _peerResolver;
-
-        volatile object _findPeersSyncObj = new object();
+        IPeerEntry _user;
+        
         volatile bool _canUpdatePeers = true;
 
-        List<IPeerEntry> _availablePeers = new List<IPeerEntry>();
+        List<IPeerEntry> _foundPeers = new List<IPeerEntry>();
+
+        IReadOnlyDictionary<Button, PeerContextData> _peersByButtons;
+        internal IReadOnlyList<PeerContextData> AvailablePeers;
+        internal PeerContextData CurrentPeer { get; private set; }
 
         #region Ctor
 
         public MainWindow()
         {
+            _peersByButtons = new Dictionary<Button, PeerContextData>();
+            AvailablePeers = new List<PeerContextData>();
             InitializeComponent();
         }
 
@@ -103,6 +112,8 @@ namespace P2P.PeerClient
             CreatePeer();
             InitPeerResolver();
 
+            _user = new PeerEntry(_localService, _serviceUrl);
+
             _uiSyncContex = SynchronizationContext.Current.CreateCopy();
             _refreshPeerTimer = new Timer(TimerCallBack, new object(),
                                   TimeSpan.FromMilliseconds(PEERLIST_REFRESH_DELAY_MS), TimeSpan.FromMilliseconds(AppSettings.PeerListRefreshMs));
@@ -128,12 +139,15 @@ namespace P2P.PeerClient
                     var binding = new NetTcpBinding();
                     binding.Security.Mode = SecurityMode.None;
 
+                    if (AvailablePeers.Any(x => x.PeerEntry.Address == remoteUrl))
+                        continue;
+
                     try
                     {
                         IP2PService remoteService = ChannelFactory<IP2PService>.CreateChannel(
                             binding, new EndpointAddress(remoteUrl));
-                        var peerEntry = new PeerEntry(remoteService);
-                        _availablePeers.Add(peerEntry);
+                        var peerEntry = new PeerEntry(remoteService, remoteUrl);
+                        _foundPeers.Add(peerEntry);
 
                         _logger.Debug($"New peer found: {peerEntry}");
                     }
@@ -155,21 +169,52 @@ namespace P2P.PeerClient
                 {
                     _logger.Debug("Updating peer list...");
 
-                    peerPanel.Children.Clear();
-                    _availablePeers = _availablePeers.OrderBy(x => x.DisplayedName)
-                                                     .ToList();
-                    foreach (var peer in _availablePeers)
+                    var existedEntries = _peersByButtons.Values.ToList();
+                    var newPeersByButtons = new Dictionary<Button, PeerContextData>();
+
+                    var newEntries = new List<KeyValuePair<Button, PeerContextData>>();
+                    foreach (var foundPeer in _foundPeers)
                     {
-                        peerPanel.Children.Add(new Button()
+                        var entry = existedEntries.FirstOrDefault(x => x.PeerEntry.DisplayedName == foundPeer.DisplayedName);
+                        if (entry == null) // new peer
                         {
-                            Width = peerPanel.Width,
-                            Height = 25,
-                            Content = peer.DisplayedName
-                        });
+                            var button = new Button()
+                            {
+                                Width = peerPanel.Width,
+                                Height = 25,
+                                Content = foundPeer.DisplayedName
+                            };
+                            button.Click += PeerButtonClick;
+
+                            var entryContex = new PeerContextData(foundPeer, button);
+                            newEntries.Add(new KeyValuePair<Button, PeerContextData>(button, entryContex));
+                        }
+                        else
+                        {
+                            newPeersByButtons.Add(_peersByButtons.First(x => x.Value == entry).Key, entry);
+                        }
+                    }
+                    foreach (var newEntry in newEntries)
+                    {
+                        newPeersByButtons.Add(newEntry.Key, newEntry.Value);
+                    }
+
+                    _peersByButtons = newPeersByButtons;
+                    AvailablePeers = _peersByButtons.Values.ToList();
+
+                    if (AvailablePeers.Any() && CurrentPeer == null)
+                    {
+                        CurrentPeer = AvailablePeers.First();
+                    }
+
+                    peerPanel.Children.Clear();
+                    foreach (var buttonKey in _peersByButtons.Keys)
+                    {
+                        peerPanel.Children.Add(buttonKey);
                     }
 
                     _canUpdatePeers = true;
-                    _logger.Debug($"Peer list update is completed. Number of peers: {_availablePeers.Count}");
+                    _logger.Debug($"Peer list update is completed. Number of peers: {_peersByButtons.Count}");
                 }
                 catch (Exception ex)
                 {
@@ -222,7 +267,7 @@ namespace P2P.PeerClient
                 {
                     _logger.Debug("Searching peers...");
 
-                    _availablePeers.Clear();
+                    _foundPeers.Clear();
                     _peerResolver.ResolveAsync(_peerName, 1);
                 }
                 catch (Exception ex)
@@ -230,11 +275,6 @@ namespace P2P.PeerClient
                     _logger.Error(ex, $"Find peers error: {ex.Message}");
                 }
             }
-        }
-
-        private void FindPeersClickButton(object sender, RoutedEventArgs e)
-        {
-            FindPeers();
         }
 
         private void InitPeerResolver()
@@ -245,6 +285,51 @@ namespace P2P.PeerClient
 
             _logger.Debug("Peer resolver is inited");
         }
+
+        private void PeerButtonClick(object sender, RoutedEventArgs e)
+        {
+            var button = (Button)sender;
+            var peerContextData = _peersByButtons[button];
+            CurrentPeer = peerContextData;
+
+            OuputPeerMessages(CurrentPeer);
+        }
+
+        internal void OuputPeerMessages(PeerContextData peer)
+        {
+            if (peer == CurrentPeer)
+            {
+                var messages = new StringBuilder();
+                foreach (var text in CurrentPeer.Messages)
+                {
+                    messages.Append(text.Content + Environment.NewLine);
+                }
+
+                MessagesHistoryTextBlock.Text = messages.ToString();
+            }
+        }
+
+        private void SendMessageClick(object sender, RoutedEventArgs e)
+        {
+            var messageToSend = MessageTextBox.Text;
+            if (string.IsNullOrEmpty(messageToSend))
+                return;
+
+            if (CurrentPeer != null)
+            {
+                var internalMessage = new Message(_user, messageToSend);
+
+                var msgOverNet = new MessageOverNet(_user, messageToSend);
+                var msgStr = JsonConvert.SerializeObject(msgOverNet);
+
+                CurrentPeer.PeerEntry.ServiceProxy.SendMessage(msgStr);
+                CurrentPeer.Messages.Add(internalMessage);
+
+                MessagesHistoryTextBlock.Text += messageToSend + Environment.NewLine;
+            }
+            MessageTextBox.Text = string.Empty;
+        }
+
 
         /// <returns>the free port or 0 if it did not find a free port</returns>
         public static int GetAvailablePort()
@@ -281,5 +366,12 @@ namespace P2P.PeerClient
 
             return default(int);
         }
+
+        #region TESTING
+        private void FindPeersClickButton(object sender, RoutedEventArgs e)
+        {
+            FindPeers();
+        }
+        #endregion
     }
 }
