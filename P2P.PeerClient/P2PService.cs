@@ -25,6 +25,11 @@ namespace P2P.PeerClient
             _userName = userName;
         }
 
+        public void ExcludeFromList(string displayedName)
+        {
+            _control.ExcludePeer(displayedName);
+        }
+
         public string GetUserName()
         {
             return _userName;

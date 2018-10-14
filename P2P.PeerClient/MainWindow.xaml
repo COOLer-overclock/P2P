@@ -5,11 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:P2P.PeerClient"
         mc:Ignorable="d"
+        ResizeMode="NoResize"
         Title="MainWindow" Height="351" Width="523.8"
         Loaded="Window_Loaded"
         Closed="Window_Closed">
     <Grid>
-        <Button Click="FindPeersClickButton" Margin="224,230,182.6,61.6">Find Peers</Button>
+        <Button Click="FindPeersClickButton" Margin="224,230,182.6,61.6" Visibility="Hidden">Find Peers</Button>
         <StackPanel
             Name="PeerListPanel" x:FieldModifier="public" Margin="10,10,351.4,9.8" Background="Azure">
         </StackPanel>

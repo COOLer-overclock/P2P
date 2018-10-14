@@ -5,12 +5,8 @@ namespace P2P.PeerClient
 {
     static class AppSettings
     {
-        [Obsolete("Think about to add dynamic port pick out")]
-        public static int? Port { get; }
 
         public static ulong PeerListRefreshMs { get; set; }
-
-        public static string Name { get; set; }
 
         static AppSettings()
         {
@@ -26,8 +22,6 @@ namespace P2P.PeerClient
             PeerListRefreshMs = refreshInterval;
 
             #endregion
-
-            Name = ConfigurationManager.AppSettings.Get("Name");
         }
     }
 }

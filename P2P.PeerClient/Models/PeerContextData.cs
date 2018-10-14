@@ -10,7 +10,6 @@ namespace P2P.PeerClient.Models
         public Button PeerButton { get; }
         public IPeerEntry PeerEntry { get; }
         public MessageHistory Messages { get; }
-        public string Address { get; set; }
 
         private PeerContextData()
         {

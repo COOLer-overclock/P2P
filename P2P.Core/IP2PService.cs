@@ -10,5 +10,8 @@ namespace P2P.Core
 
         [OperationContract(IsOneWay = true)]
         void SendMessage(string message);
+        
+        [OperationContract(IsOneWay = true)]
+        void ExcludeFromList(string displayedName);
     }
 }
