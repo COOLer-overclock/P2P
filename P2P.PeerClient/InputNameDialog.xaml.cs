@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace P2P.PeerClient
 {
@@ -10,6 +13,8 @@ namespace P2P.PeerClient
         public InputNameDialog()
         {
             InitializeComponent();
+            ResponseTextBox.KeyDown += new KeyEventHandler(InputNameKeyDown);
+            ResponseTextBox.Focus();
         }
 
         public string ResponseText
@@ -33,6 +38,19 @@ namespace P2P.PeerClient
         private void CancelButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+
+        void InputNameKeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    OkButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    break;
+                case Key.Escape:
+                    CancelButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    break;
+            }
         }
     }
 }

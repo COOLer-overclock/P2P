@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace P2P.PeerClient
@@ -29,6 +30,7 @@ namespace P2P.PeerClient
 
         private const string PEER_CLASSIFIER = "P2PNetwork";
         private const int PEERLIST_REFRESH_DELAY_MS = 0;
+        private const string SENDER_SEPARATOR = ": ";
 
         private static ILogger _logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -134,7 +136,15 @@ namespace P2P.PeerClient
             _uiSyncContex = SynchronizationContext.Current.CreateCopy();
             _refreshPeerTimer = new Timer(TimerCallBack, new object(),
                                   TimeSpan.FromMilliseconds(PEERLIST_REFRESH_DELAY_MS), TimeSpan.FromMilliseconds(AppSettings.PeerListRefreshMs));
+
+            #region key downs
+
+            MessageTextBox.KeyDown += new KeyEventHandler(MessageKeyDown);
+
+            #endregion
         }
+
+
 
         private void Window_Closed(object sender, EventArgs e)
         {
@@ -318,6 +328,34 @@ namespace P2P.PeerClient
             _logger.Debug("Peer resolver is inited");
         }
 
+        void MessageKeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    SendMessage();
+                    break;
+                case Key.Tab:
+                    ShiftCurrentUser();
+                    MessageTextBox.Focus();
+                    break;
+            }
+        }
+
+        private void ShiftCurrentUser()
+        {
+            CurrentPeer.PeerButton.Background = PEER_BUTTON_NO_MESSAGES_COLOR;
+
+            var indexOfCurrent = AvailablePeers.ToList().IndexOf(CurrentPeer);
+            if (AvailablePeers.Count < indexOfCurrent + 2)
+                CurrentPeer = AvailablePeers[0];
+            else
+                CurrentPeer = AvailablePeers[indexOfCurrent + 1];
+
+            CurrentPeer.PeerButton.Background = PEER_BUTTON_CURRENT_COLOR;
+            OuputPeerMessages(CurrentPeer);
+        }
+
         private void PeerButtonClick(object sender, RoutedEventArgs e)
         {
             var button = (Button)sender;
@@ -336,9 +374,9 @@ namespace P2P.PeerClient
             if (peer == CurrentPeer)
             {
                 var messages = new StringBuilder();
-                foreach (var text in CurrentPeer.Messages)
+                foreach (var message in CurrentPeer.Messages)
                 {
-                    messages.Append(text.Content + Environment.NewLine);
+                    messages.Append(message.From.DisplayedName + SENDER_SEPARATOR + message.Content + Environment.NewLine);
                 }
 
                 MessagesHistoryTextBlock.Text = messages.ToString();
@@ -351,6 +389,11 @@ namespace P2P.PeerClient
         }
 
         private void SendMessageClick(object sender, RoutedEventArgs e)
+        {
+            SendMessage();
+        }
+
+        private void SendMessage()
         {
             var messageToSend = MessageTextBox.Text;
             if (string.IsNullOrEmpty(messageToSend))
@@ -368,7 +411,7 @@ namespace P2P.PeerClient
                     CurrentPeer.PeerEntry.ServiceProxy.SendMessage(msgStr);
                     CurrentPeer.Messages.Add(internalMessage);
 
-                    MessagesHistoryTextBlock.Text += messageToSend + Environment.NewLine;
+                    MessagesHistoryTextBlock.Text += _user.DisplayedName + SENDER_SEPARATOR + messageToSend + Environment.NewLine;
                 }
                 catch (CommunicationException ex)
                 {
@@ -434,10 +477,12 @@ namespace P2P.PeerClient
         }
 
         #region TESTING
+
         private void FindPeersClickButton(object sender, RoutedEventArgs e)
         {
             FindPeers();
         }
+
         #endregion
 
         public void ExcludePeer(string displayedName)
@@ -453,13 +498,13 @@ namespace P2P.PeerClient
                 {
                     OuputPeerMessages(nextPeer);
                     CurrentPeer = nextPeer;
+                    nextPeer.PeerButton.Background = PEER_BUTTON_CURRENT_COLOR;
                 }
             }
 
             _peersByButtons = _peersByButtons.Where(x => x.Value.PeerEntry.DisplayedName != displayedName)
                                              .ToDictionary(x => x.Key, x => x.Value);
             AvailablePeers = _peersByButtons.Values.ToList();
-
             RefreshPeerPanel();
         }
     }
